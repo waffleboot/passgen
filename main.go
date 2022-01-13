@@ -62,15 +62,18 @@ func app() error {
 			j := rand.Intn(len(adjectives))
 			k := rand.Intn(len(nouns))
 
-			v := verbs[i]
+			_ = verbs[i]
 			a := adjectives[j]
 			n := nouns[k]
 
-			// s := strings.Title(a) + strings.Title(n)
-			// fmt.Printf("%s %s -> %s\n", a, n, translate(s))
+			s := a + strings.Title(n)
+			fmt.Printf("%s %s -> %s\n", a, n, translate(s))
 
-			s := v + strings.Title(a) + strings.Title(n)
-			fmt.Printf("%s %s %s -> %s\n", v, a, n, translate(s))
+			// s := v + strings.Title(a) + strings.Title(n)
+			// fmt.Printf("%s %s %s -> %s\n", v, a, n, translate(s))
+
+			// s := v + translateAlways(strings.Title(a)) + strings.Title(n)
+			// fmt.Printf("%s %s %s -> %s\n", v, a, n, s)
 		}
 
 		return gCtx.Err()
@@ -94,6 +97,15 @@ func parse(b []byte) ([]string, error) {
 	return ans, nil
 }
 
+func translateAlways(s string) string {
+	var buf strings.Builder
+	for _, c := range s {
+		buf.WriteRune(change(c))
+	}
+
+	return buf.String()
+}
+
 func translate(s string) string {
 	// g -> 9
 	// a -> @
@@ -103,26 +115,32 @@ func translate(s string) string {
 	// s -> $
 	// l -> 1
 	// x -> 6
+	// z -> 2
 
-	var a []int
+	e := make(map[rune]*[]int)
 
 	for i, c := range s {
 		switch c {
-		case 'g', 'a', 'e', 'i', 'o', 's', 'l', 'x':
-			a = append(a, i)
+		case 'g', 'a', 'e', 'i', 'o', 's', 'l', 'x', 'z', 'k', 'f', 't', 'c':
+			x := e[c]
+			if x != nil {
+				*x = append(*x, i)
+			} else {
+				p := []int{i}
+				e[c] = &p
+			}
 		}
 	}
 
-	rand.Shuffle(len(a), func(i, j int) {
-		a[i], a[j] = a[j], a[i]
-	})
-
-	a = a[:len(a)*2/3]
-
 	m := make(map[int]struct{})
 
-	for _, n := range a {
-		m[n] = struct{}{}
+	for _, x := range e {
+		q := *x
+		rand.Shuffle(len(*x), func(i, j int) {
+			q[i], q[j] = q[j], q[i]
+		})
+
+		m[q[0]] = struct{}{}
 	}
 
 	var buf strings.Builder
@@ -143,6 +161,16 @@ func translate(s string) string {
 
 func change(c rune) rune {
 	switch c {
+	case 'c':
+		return '('
+	case 't':
+		return '+'
+	case 'f':
+		return '='
+	case 'k':
+		return '<'
+	case 'z':
+		return '2'
 	case 'g':
 		return '9'
 	case 'a':
