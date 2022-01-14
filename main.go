@@ -57,7 +57,7 @@ func app() error {
 	g, gCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		for gCtx.Err() == nil {
+		for {
 			i := rand.Intn(len(verbs))
 			j := rand.Intn(len(adjectives))
 			k := rand.Intn(len(nouns))
@@ -65,6 +65,12 @@ func app() error {
 			_ = verbs[i]
 			a := adjectives[j]
 			n := nouns[k]
+
+			select {
+			case <-time.After(500 * time.Millisecond):
+			case <-gCtx.Done():
+				return gCtx.Err()
+			}
 
 			s := a + strings.Title(n)
 			fmt.Printf("%s %s -> %s\n", a, n, translate(s))
@@ -75,8 +81,6 @@ func app() error {
 			// s := v + translateAlways(strings.Title(a)) + strings.Title(n)
 			// fmt.Printf("%s %s %s -> %s\n", v, a, n, s)
 		}
-
-		return gCtx.Err()
 	})
 
 	return g.Wait()
@@ -106,7 +110,7 @@ func translateAlways(s string) string {
 	return buf.String()
 }
 
-func translate(s string) string {
+func translate2(s string) string {
 	// g -> 9
 	// a -> @
 	// e -> 3
